@@ -116,6 +116,58 @@ app.post("/interview", async (req, res) => {
   }
 });
 
+app.post("/feedback", async (req, res) => {
+  const feedback = req.body;
+  try {
+    const assistantId = await getOrCreateAssistant();
+
+    if (!assistantId) {
+      return res
+        .status(500)
+        .json({ error: "Unable to create or retrieve an assistant." });
+    }
+
+    const thread = await openai.beta.threads.create();
+
+    await openai.beta.threads.messages.create(thread.id, {
+      role: "user",
+      content: `Вот мои ответы ${JSON.stringify(
+        feedback.answers
+      )} на вопросы, можешь дать мне фидбек, мои слабые и сильные стороны`,
+    });
+
+    const run = await openai.beta.threads.runs.stream(thread.id, {
+      assistant_id: assistantId,
+    });
+
+    let feedbacks = [];
+    run.on("textDone", (text) => {
+      feedbacks.push(text.value);
+    });
+
+    run.on("end", () => {
+      try {
+        const cleanedFeedback = JSON.parse(
+          feedbacks[0]
+            .replace(/\\n/g, "")
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim()
+        );
+        res.json(cleanedFeedback);
+      } catch (parseError) {
+        console.error("Error parsing feedback:", parseError);
+        res.status(500).json({ error: "Failed to parse feedback." });
+      }
+    });
+  } catch (error) {
+    console.error("API Error:", error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while processing your request." });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });

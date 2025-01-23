@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import OpenAI from "openai";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
@@ -9,7 +10,15 @@ const assistantName = process.env.ASSISTANT_NAME;
 const openai = new OpenAI({ apiKey: openaiApiKey });
 const app = express();
 const port = 3000;
+app.use(express.json());
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300, 
+  message: "Too many requests from this IP, please try again later.",
+});
+
+app.use(limiter);
 app.use(express.json());
 
 async function getOrCreateAssistant() {

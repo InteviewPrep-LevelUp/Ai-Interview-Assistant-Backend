@@ -12,13 +12,13 @@ const app = express();
 const port = 3000;
 app.use(express.json());
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 300, 
-  message: "Too many requests from this IP, please try again later.",
-});
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000,
+//   max: 300, 
+//   message: "Too many requests from this IP, please try again later.",
+// });
 
-app.use(limiter);
+// app.use(limiter);
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
